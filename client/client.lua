@@ -1,4 +1,4 @@
-local Config = require '../config.lua'
+local Config = require '..config'
 local QBCore = exports['qb-core']:GetCoreObject()
 local lang = require '../localization/' .. Config.Locale .. '.lua'
 
@@ -47,8 +47,8 @@ local function MakePedsTargetable()
         name = 'd_drugsell_target',
         icon = 'fas fa-hand-holding-usd',
         distance = Config.SellDistance,
-        canInteract = function(entity, distance, data)
-            CheckTargeting(entity)
+        canInteract = function(entity, distance, coords, name, bone)
+            return CheckTargeting(entity)
         end,
 
         onSelect = function(data)
@@ -58,9 +58,13 @@ local function MakePedsTargetable()
     exports.ox_target:addGlobalPed(options)
 end
 
--- listen to load so we can add the target to peds when they spawn
-AddEventHandler('onResourceStart', function(resourceName)
-    if GetCurrentResourceName() == resourceName then
+-- -- listen to load so we can add the target to peds when they spawn
+-- AddEventHandler('onResourceStart', function(resourceName)
+--     if GetCurrentResourceName() == resourceName then
+--     end
+-- end)
+
+
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function() 
         MakePedsTargetable()
-    end
 end)

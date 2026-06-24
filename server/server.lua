@@ -1,3 +1,5 @@
+local QBCore = exports['qb-core']:GetCoreObject()
+
 QBCore.Functions.CreateCallback('d_drugsell:server:checkPlayerDrugs', function(source,cb, serverId)
     local xPlayer = QBCore.Functions.GetPlayer(serverId)
     if xPlayer then
