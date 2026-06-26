@@ -1,12 +1,12 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
-QBCore.Functions.CreateCallback('d_drugsell:server:checkPlayerDrugs', function(source, cb, serverId)
-    local xPlayer = QBCore.Functions.GetPlayer(serverId)
+QBCore.Functions.CreateCallback('d_drugsell:server:checkPlayerDrugs', function(source, cb)
+    local xPlayer = QBCore.Functions.GetPlayer(source)
     if xPlayer then
         for drugName, drugPrice in pairs(Config.Drugs) do
             local item = xPlayer.Functions.GetItemByName(drugName)
             if item and item.amount >= Config.MinSellAmount then
-                cb(true, item.name, item.amount, drugPrice)
+                cb(true, item.name)
                 return
             end
         end
@@ -23,19 +23,20 @@ local function RemoveRandomAmountOfDrugs(xPlayer, drugName, drugAmount)
     return amountToRemove
 end
 
-local function AntiyExploitCheck(xPlayer, drugName, drugAmount)
-    if not xPlayer then return false end
+local function AntiyExploitCheck(xPlayer, drugName)
+    if not xPlayer or not Config.Drugs[drugName] then return false end
 
     local item = xPlayer.Functions.GetItemByName(drugName)
-        return item and item.amount >= drugAmount or false
+        return item and item.amount >= Config.MinSellAmount or false
 end
 
-RegisterNetEvent('d_drugsell:server:sellDrugs', function(drugName, drugAmount, drugPrice)
+RegisterNetEvent('d_drugsell:server:sellDrugs', function(drugName)
     local xPlayer = QBCore.Functions.GetPlayer(source)
     if xPlayer then
-        if AntiyExploitCheck(xPlayer, drugName, drugAmount) then
+        if AntiyExploitCheck(xPlayer, drugName) then
+            local drugAmount = xPlayer.Functions.GetItemByName(drugName).amount
             local sellAmount = RemoveRandomAmountOfDrugs(xPlayer, drugName, drugAmount)
-            local profit = drugPrice * sellAmount
+            local profit = Config.Drugs[drugName] * sellAmount
             xPlayer.Functions.AddMoney('cash', profit)
             TriggerClientEvent('QBCore:Notify', source, string.format(Lang.pl_pl.sold_some, sellAmount, drugName, profit), 'success')
         else

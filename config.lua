@@ -8,6 +8,7 @@ Config.MinSellAmount = 2
 Config.MaxSellAmount = 15
 
 Config.Drugs = {
+    -- ['name of the drug'] = price
     ['meth'] = 100,
     ['coke'] = 200,
     ['weed'] = 100

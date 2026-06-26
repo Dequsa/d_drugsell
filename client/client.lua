@@ -2,17 +2,13 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local blacklistedPeds = {}
 
 local function SellDrugs()
-    local playerId = PlayerId()
-    local playerServerId = GetPlayerServerId(playerId)
-    QBCore.Functions.TriggerCallback('d_drugsell:server:checkPlayerDrugs',
-        function(hasDrugs, drugName, drugAmount, drugPrice)
-            --TODO REMOVE durgPrice | drugAmount
-            if hasDrugs then
-                TriggerServerEvent('d_drugsell:server:sellDrugs', drugName, drugAmount, drugPrice)
-            else
-                QBCore.Functions.Notify(Lang.pl_pl.no_drugs, 'error')
-            end
-        end, playerServerId)
+    QBCore.Functions.TriggerCallback('d_drugsell:server:checkPlayerDrugs', function(hasDrugs, drugName)
+        if hasDrugs then
+            TriggerServerEvent('d_drugsell:server:sellDrugs', drugName)
+        else
+            QBCore.Functions.Notify(Lang.pl_pl.no_drugs, 'error')
+        end
+    end)
 end
 
 local function CheckBlacklist(entity)
