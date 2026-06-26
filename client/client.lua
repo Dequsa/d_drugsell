@@ -1,39 +1,26 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local blacklistedPeds = {}
 
-
-local function CheckIfPlayerHasTargetActive()
-    return exports.ox_target:isActive()
-end
-
 local function SellDrugs()
-    local playerPed = PlayerPedId()
     local playerId = PlayerId()
     local playerServerId = GetPlayerServerId(playerId)
-    if CheckIfPlayerHasTargetActive() then
-        -- print('target')
-        QBCore.Functions.TriggerCallback('d_drugsell:server:checkPlayerDrugs',
-            function(hasDrugs, drugName, drugAmount, drugPrice)
-                if hasDrugs then
-                    TriggerServerEvent('d_drugsell:server:sellDrugs', drugName, drugAmount, drugPrice)
-                else
-                    QBCore.Functions.Notify(Lang.pl_pl.no_drugs, 'error')
-                end
-            end, playerServerId)
-    end
+    QBCore.Functions.TriggerCallback('d_drugsell:server:checkPlayerDrugs',
+        function(hasDrugs, drugName, drugAmount, drugPrice)
+            --TODO REMOVE durgPrice | drugAmount
+            if hasDrugs then
+                TriggerServerEvent('d_drugsell:server:sellDrugs', drugName, drugAmount, drugPrice)
+            else
+                QBCore.Functions.Notify(Lang.pl_pl.no_drugs, 'error')
+            end
+        end, playerServerId)
 end
 
 local function CheckBlacklist(entity)
     local model = GetEntityModel(entity)
-    if blacklistedPeds[model] then
-        return true
-    end
-    return false
+    return blacklistedPeds[model]
 end
 
 local function CheckTargeting(entity)
-    local playerPed = PlayerPedId()
-
     if (CheckBlacklist(entity)) then
         return false
     end
@@ -42,6 +29,7 @@ local function CheckTargeting(entity)
         return false
     end
 
+    local playerPed = PlayerPedId()
     if IsPedDeadOrDying(playerPed, 1) or IsPedDeadOrDying(entity, 1) then
         return false
     end
@@ -76,15 +64,12 @@ local function HashBlacklistedPeds()
     end
 end
 
-RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function() 
-        HashBlacklistedPeds()
-        MakePedsTargetable()
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    HashBlacklistedPeds()
+    MakePedsTargetable()
 end)
 
 AddEventHandler('onClientResourceStart', function()
-    local resourceName = 'd_drugsell'
-    if  resourceName == GetCurrentResourceName() then
-        HashBlacklistedPeds()
-        MakePedsTargetable()
-    end
+    HashBlacklistedPeds()
+    MakePedsTargetable()
 end)

@@ -5,7 +5,7 @@ QBCore.Functions.CreateCallback('d_drugsell:server:checkPlayerDrugs', function(s
     if xPlayer then
         for drugName, drugPrice in pairs(Config.Drugs) do
             local item = xPlayer.Functions.GetItemByName(drugName)
-            if item and item.amount > Config.MinSellAmount then
+            if item and item.amount >= Config.MinSellAmount then
                 cb(true, item.name, item.amount, drugPrice)
                 return
             end
@@ -14,13 +14,8 @@ QBCore.Functions.CreateCallback('d_drugsell:server:checkPlayerDrugs', function(s
     cb(false)
 end)
 
-
-local function SetUpperLimit(drugAmount)
-    return math.min(drugAmount, Config.MaxSellAmount)
-end
-
 local function RemoveRandomAmountOfDrugs(xPlayer, drugName, drugAmount)
-    local maxPossibleSell = SetUpperLimit(drugAmount)
+    local maxPossibleSell = math.min(drugAmount, Config.MaxSellAmount)
     local minPossibleSell = Config.MinSellAmount
     local amountToRemove = math.random(minPossibleSell, maxPossibleSell)
 
