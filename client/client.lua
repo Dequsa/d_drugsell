@@ -1,4 +1,6 @@
 local QBCore = exports['qb-core']:GetCoreObject()
+local blacklistedPeds = {}
+
 
 local function CheckIfPlayerHasTargetActive()
     return exports.ox_target:isActive()
@@ -21,10 +23,20 @@ local function SellDrugs()
     end
 end
 
+local function CheckBlacklist(entity)
+    local model = GetEntityModel(entity)
+    if blacklistedPeds[model] then
+        return true
+    end
+    return false
+end
+
 local function CheckTargeting(entity)
     local playerPed = PlayerPedId()
 
-    -- print('checking')
+    if (CheckBlacklist(entity)) then
+        return false
+    end
 
     if entity == cache.ped then
         return false
@@ -58,13 +70,21 @@ local function MakePedsTargetable()
     exports.ox_target:addGlobalPed(options)
 end
 
+local function HashBlacklistedPeds()
+    for _, ped in ipairs(Config.BlacklistedPeds) do
+        blacklistedPeds[GetHashKey(ped)] = true
+    end
+end
+
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function() 
+        HashBlacklistedPeds()
         MakePedsTargetable()
 end)
 
 AddEventHandler('onClientResourceStart', function()
     local resourceName = 'd_drugsell'
     if  resourceName == GetCurrentResourceName() then
+        HashBlacklistedPeds()
         MakePedsTargetable()
     end
 end)
