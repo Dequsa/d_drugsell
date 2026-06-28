@@ -12,5 +12,6 @@ Lang.pl_pl = {
     ['no_pay'] = 'Klient nie zaplacił złap go, żeby odzyskać towar',
     ['over_pay'] = 'Klient zapłacił wiecej, lepiej uciekaj zniam się skapnie',
     ['cooldown'] = 'Musisz poczekać %s sekundy',
-    ['start_deal_progress_bar'] = 'Dealujesz'
+    ['start_deal_progress_bar'] = 'Dealujesz',
+    ['get_back_drugs'] = 'Ukradnij narkotyki'
 }

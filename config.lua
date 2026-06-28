@@ -4,6 +4,7 @@ Config.Locale = 'pl_pl'
 
 Config.SellDistance = 2.5
 Config.TargetIcon = 'fas fa-hand-holding-usd'
+Config.newTargetIcon = 'fas fa-hand-holding-usd'
 Config.SellCooldown = 1 -- seconds
 Config.MinSellAmount = 2
 Config.MaxSellAmount = 15
@@ -23,9 +24,9 @@ Config.BlacklistedPeds = {
 }
 
 Config.EventType = {
-    ['undercover_cop'] = 0.2,
-    ['no_pay'] = 0.2,
-    ['over_pay'] = 0.2,
-    ['dissmisive'] = 0.2,
-    ['normal'] = 0.2
+    ['undercover_cop'] = 0.0,
+    ['no_pay'] = 1.0,
+    ['over_pay'] = 0.0,
+    ['dissmisive'] = 0.0,
+    ['normal'] = 0.0
 }

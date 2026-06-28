@@ -2,6 +2,10 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local blacklistedPeds = {}
 local ped = nil
 local targetName = 'd_drugsell_target'
+local newTargetName = 'd_drugsell_steal'
+local dealtPeds = {}
+local thief = {}
+local thief_npc = nil
 
 local function CheckBlacklist(entity)
     local model = GetEntityModel(entity)
@@ -9,7 +13,11 @@ local function CheckBlacklist(entity)
 end
 
 local function CheckTargeting(entity)
-    if (CheckBlacklist(entity)) then
+    if dealtPeds[entity] == true then
+        return false
+    end
+
+    if CheckBlacklist(entity) then
         return false
     end
 
@@ -42,6 +50,7 @@ local function MakePedsTargetable()
 
         onSelect = function(data)
             TriggerServerEvent('d_drugsell:server:sellDrugs')
+            dealtPeds[ped] = true
         end
     }
     exports.ox_target:addGlobalPed(options)
@@ -80,8 +89,6 @@ RegisterNetEvent('d_drugsell:client:handleDealAnimations', function()
     while not HasAnimDictLoaded(dealAnimDict) or not HasAnimDictLoaded(dealAnimDictTarget) do
         Citizen.Wait(0)
     end
-
-    local screenX, screenY = GetScreenResolution()
 
     local data = {
         duration = Config.DealDuration,
@@ -124,4 +131,41 @@ RegisterNetEvent('d_drugsell:client:handleDealAnimations', function()
     lib.progressBar(data)
 
     FreezeEntityPosition(ped, false)
+end)
+
+local function MakePedRun(captured)
+    local fleeDistance = 1000
+    local fleeTime = -1 -- forever
+    ClearPedTasksImmediately(captured)
+    SetBlockingOfNonTemporaryEvents(captured, true)
+    TaskSmartFleePed(captured, cache.ped, fleeDistance, fleeTime)
+end
+
+RegisterNetEvent('d_drugsell:client:thiefNpc', function()
+    local captured = ped
+    thief_npc = captured
+
+    local options = {
+        label = Lang.pl_pl.get_back_drugs,
+        name = newTargetName,
+        icon = Config.newTargetIcon,
+        distance = Config.SellDistance,
+        canInteract = function(entity, distance, coords, name, bone)
+            return entity == captured and thief[captured] == true
+        end,
+
+        onSelect = function(data)
+            TriggerServerEvent('d_drugsell:server:getbackdrugs')
+            thief[captured] = false
+        end
+    }
+
+    exports.ox_target:addLocalEntity(captured, options)
+    thief[captured] = true
+
+    MakePedRun(captured)
+end)
+
+RegisterNetEvent('d_drugsell:client:cleanthief', function()
+    exports.ox_target:removeLocalEntity(thief_npc, newTargetName)
 end)

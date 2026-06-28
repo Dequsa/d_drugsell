@@ -1,43 +1,31 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local cooldowns = {}
+local stolenAmounts = {}
+local stolenItems = {}
 
--- QBCore.Functions.CreateCallback('d_drugsell:server:checkPlayerDrugs', function(source, cb)
---     local xPlayer = QBCore.Functions.GetPlayer(source)
---     if xPlayer then
---         for drugName in pairs(Config.Drugs) do
---             local item = xPlayer.Functions.GetItemByName(drugName)
---             if item and item.amount >= Config.MinSellAmount then
---                 cb(true)
---                 return
---             end
---         end
---     end
---     cb(false)
--- end)
-
-local function RemoveRandomAmountOfDrugs(xPlayer, drugName, drugAmount)
-    local maxPossibleSell = math.min(drugAmount, Config.MaxSellAmount)
+local function RemoveRandomAmountOfDrugs(xPlayer, item)
+    local maxPossibleSell = math.min(item.amount, Config.MaxSellAmount)
     local minPossibleSell = Config.MinSellAmount
     local amountToRemove = math.random(minPossibleSell, maxPossibleSell)
 
-    exports.ox_inventory:RemoveItem(xPlayer.PlayerData.source, drugName, amountToRemove)
+    exports.ox_inventory:RemoveItem(xPlayer.PlayerData.source, item.name, amountToRemove)
     return amountToRemove
 end
 
 local function SuccessfulSell(item, src, xPlayer, modPrice)
-    local drugAmount = item.amount
-    local sellAmount = RemoveRandomAmountOfDrugs(xPlayer, item.name, drugAmount)
+    local sellAmount = RemoveRandomAmountOfDrugs(xPlayer, item)
 
     if modPrice == nil then
         modPrice = Config.Drugs[item.name]
     else
         modPrice = Config.Drugs[item.name] * modPrice
     end
-
+    
     local profit = modPrice * sellAmount
     xPlayer.Functions.AddMoney('cash', profit)
-    TriggerClientEvent('QBCore:Notify', src, string.format(Lang.pl_pl.sold_some, sellAmount, item.name, profit),
-        'success')
+
+    TriggerClientEvent('d_drugsell:client:handleDealAnimations', src)
+    TriggerClientEvent('QBCore:Notify', src, string.format(Lang.pl_pl.sold_some, sellAmount, item.name, profit), 'success')
 end
 
 local function FailedSell(src, xPlayer)
@@ -60,9 +48,17 @@ local events = {
     undercover_cop = function(src, xPlayer, item)
         TriggerClientEvent('QBCore:Notify', src, string.format(Lang.pl_pl.u_c, '`'), 'error')
     end,
+    
     no_pay = function(src, xPlayer, item)
         TriggerClientEvent('QBCore:Notify', src, Lang.pl_pl.no_pay, 'error')
+        
+        local stolenAmount = RemoveRandomAmountOfDrugs(xPlayer, item)
+        stolenAmounts[src] = stolenAmount
+        stolenItems[src] = item
+        TriggerClientEvent('d_drugsell:client:thiefNpc', src)
+        TriggerClientEvent('d_drugsell:client:handleDealAnimations', src)
     end,
+    
     over_pay = function(src, xPlayer, item)
         TriggerClientEvent('QBCore:Notify', src, Lang.pl_pl.over_pay, 'success')
         local min = 10
@@ -70,13 +66,32 @@ local events = {
         local priceModifier = math.random(min, max) / 10
         SuccessfulSell(item, src, xPlayer, priceModifier)
     end,
+
     dismissive = function(src, xPlayer, item)
         TriggerClientEvent('QBCore:Notify', src, Lang.pl_pl.dissmisive, 'error')
     end,
+
     normal = function(src, xPlayer, item)
         SuccessfulSell(item, src, xPlayer, nil)
     end
 }
+
+RegisterNetEvent('d_drugsell:server:getbackdrugs', function()
+    local src = source
+    if stolenAmounts[src] == nil or stolenItems[src] == nil then
+        return
+    end
+
+    local stolenAmount = stolenAmounts[src]
+    local stolenDrug = stolenItems[src]
+
+    stolenAmounts[src] = nil
+    stolenItems[src] = nil
+
+    exports.ox_inventory:AddItem(src, stolenDrug.name, stolenAmount)
+    TriggerClientEvent('d_drugsell:client:cleanthief')
+end)
+
 
 RegisterNetEvent('d_drugsell:server:sellDrugs', function()
     local src = source
@@ -103,7 +118,6 @@ RegisterNetEvent('d_drugsell:server:sellDrugs', function()
         if item then
             local randomEvent = EventRandomizer()
             if events[randomEvent] then
-                TriggerClientEvent('d_drugsell:client:handleDealAnimations', src)
                 events[randomEvent](src, xPlayer, item)
             end
         else
@@ -114,4 +128,6 @@ end)
 
 AddEventHandler('playerDropped', function()
     cooldowns[source] = nil
+    stolenAmounts[source] = nil
+    stolenItems[source] = nil
 end)
